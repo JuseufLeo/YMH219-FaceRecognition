@@ -1,0 +1,16 @@
+# Visual Studio / .NET derleme çıktıları
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+TestResults/
+
+# Kişisel yüz örnekleri ve eğitilmiş model GitHub'a yüklenmez (gizlilik)
+FaceData/
+face_model.yml
