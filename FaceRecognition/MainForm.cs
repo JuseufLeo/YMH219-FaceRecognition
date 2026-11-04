@@ -193,6 +193,56 @@ namespace FaceRecognition
             SetStatus($"'{label}' için yüz örneği eklendi. Farklı açılardan birkaç örnek ekleyip modeli eğitin.", Color.FromArgb(21, 101, 192));
         }
 
+        /// <summary>
+        /// Seçilen klasördeki her alt klasörü bir kişi kabul eder; içindeki resimlerde yüzü bulup örnek olarak ekler.
+        /// Örn. Ornekler/Ali/*.jpg ve Ornekler/Ayse/*.jpg
+        /// </summary>
+        private void BtnAddFolder_Click(object sender, EventArgs e)
+        {
+            if (detector == null || folderDialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string[] extensions = { ".jpg", ".jpeg", ".png", ".bmp", ".pgm" };
+            int added = 0, skipped = 0;
+            Cursor = Cursors.WaitCursor;
+            try
+            {
+                foreach (string personFolder in Directory.GetDirectories(folderDialog.SelectedPath))
+                {
+                    string label = Path.GetFileName(personFolder);
+                    foreach (string file in Directory.GetFiles(personFolder)
+                                 .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant())))
+                    {
+                        using Mat image = Cv2.ImRead(file);
+                        if (image.Empty()) { skipped++; continue; }
+                        lock (processLock)
+                        {
+                            Rect[] faces = detector.Detect(image);
+                            if (faces.Length == 0) { skipped++; continue; }
+                            using Mat prepared = FaceDetector.PrepareFace(image, faces[0]);
+                            dataset.AddSample(label, prepared);
+                        }
+                        added++;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                MessageBox.Show("Klasör okunamadı: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+
+            RefreshLabels();
+            if (added == 0)
+                MessageBox.Show("Hiç yüz örneği eklenemedi. Klasörde, her kişi için içinde yüz fotoğrafları olan alt klasörler olmalı.",
+                    "Örnek eklenmedi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            SetStatus($"📁 Klasörden {added} örnek eklendi" + (skipped > 0 ? $", {skipped} resimde yüz bulunamadı." : "."),
+                Color.FromArgb(21, 101, 192));
+        }
+
         private void BtnTrain_Click(object sender, EventArgs e)
         {
             try

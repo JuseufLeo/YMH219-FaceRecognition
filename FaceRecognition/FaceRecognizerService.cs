@@ -16,7 +16,7 @@ namespace FaceRecognition
     public class FaceRecognizerService : IDisposable
     {
         /// <summary>Bu uzaklığın üstündeki tahminler "Bilinmiyor" sayılır.</summary>
-        public double UnknownThreshold { get; set; } = 70;
+        public double UnknownThreshold { get; set; } = 50;
 
         private LBPHFaceRecognizer recognizer;
         private Dictionary<int, string> names = new Dictionary<int, string>();

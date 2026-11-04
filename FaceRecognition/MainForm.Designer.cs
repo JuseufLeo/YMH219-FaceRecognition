@@ -31,7 +31,9 @@ namespace FaceRecognition
             lblConfidence = new Label();
             lblStatus = new Label();
             lblPrivacy = new Label();
+            btnAddFolder = new Button();
             openFileDialog = new OpenFileDialog();
+            folderDialog = new FolderBrowserDialog();
             ((System.ComponentModel.ISupportInitialize)picView).BeginInit();
             SuspendLayout();
             //
@@ -115,10 +117,10 @@ namespace FaceRecognition
             // btnAddSample
             //
             btnAddSample.Name = "btnAddSample";
-            btnAddSample.Text = "➕ Görüntüdeki Yüzü Örnek Olarak Ekle";
+            btnAddSample.Text = "➕ Yüzü Örnek Ekle";
             btnAddSample.Font = new Font("Segoe UI", 9F);
             btnAddSample.Location = new Point(12, 56);
-            btnAddSample.Size = new Size(296, 32);
+            btnAddSample.Size = new Size(146, 32);
             btnAddSample.Click += BtnAddSample_Click;
             grpTrain.Controls.Add(btnAddSample);
             //
@@ -208,6 +210,21 @@ namespace FaceRecognition
             lblPrivacy.Size = new Size(976, 18);
             lblPrivacy.Text = "Ders amaçlı demo: yalnızca gönüllülerin/kendi yüzünüzün örnekleri kullanılır, görüntüler yalnızca bu bilgisayarda (FaceData klasörü) saklanır.";
             //
+            // btnAddFolder
+            //
+            btnAddFolder.Name = "btnAddFolder";
+            btnAddFolder.Text = "📁 Klasörden Toplu Ekle";
+            btnAddFolder.Font = new Font("Segoe UI", 9F);
+            btnAddFolder.Location = new Point(162, 56);
+            btnAddFolder.Size = new Size(146, 32);
+            btnAddFolder.Click += BtnAddFolder_Click;
+            grpTrain.Controls.Add(btnAddFolder);
+            //
+            // folderDialog
+            //
+            folderDialog.Description = "Her alt klasörü bir kişi (etiket) olan klasörü seçin";
+            folderDialog.UseDescriptionForTitle = true;
+            //
             // openFileDialog
             //
             openFileDialog.Filter = "Resim dosyaları (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp";
@@ -253,5 +270,7 @@ namespace FaceRecognition
         private Label lblStatus;
         private Label lblPrivacy;
         private OpenFileDialog openFileDialog;
+        private Button btnAddFolder;
+        private FolderBrowserDialog folderDialog;
     }
 }
