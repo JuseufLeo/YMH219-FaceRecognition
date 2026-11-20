@@ -18,6 +18,8 @@ namespace FaceRecognition
         private readonly FaceDataset dataset = new FaceDataset(Path.Combine(AppContext.BaseDirectory, "FaceData"));
         private readonly object processLock = new object();   // kamera iş parçacığı ile arayüz aynı anda modeli kullanmasın
         private FaceDetector detector;
+        // Eğitilen model bu dosyaya kaydedilir; program her açıldığında otomatik yüklenir
+        private readonly string modelPath = Path.Combine(AppContext.BaseDirectory, "face_model.yml");
         private Mat currentFrame;                              // örnek eklemek için son görüntü
 
         public MainForm()
@@ -41,8 +43,24 @@ namespace FaceRecognition
                 SetStatus("Yüz algılama modeli bulunamadı; algılama yapılamaz.", Color.FromArgb(198, 40, 40));
             }
 
+            LoadSavedModel();
             RefreshLabels();
             UpdateButtons();
+        }
+
+        /// <summary>Program açılırken daha önce kaydedilmiş model varsa yükler; böylece her seferinde yeniden eğitmek gerekmez.</summary>
+        private void LoadSavedModel()
+        {
+            try
+            {
+                if (recognizer.TryLoad(modelPath))
+                    SetStatus($"💾 Kayıtlı model yüklendi: {recognizer.LabelCount} kişi, {recognizer.SampleCount} örnek " +
+                              $"(eğitim: {recognizer.TrainedAt:dd.MM.yyyy HH:mm}). Tanıma aktif.", Color.FromArgb(46, 125, 50));
+            }
+            catch (Exception ex) when (ex is InvalidDataException || ex is IOException || ex is UnauthorizedAccessException)
+            {
+                SetStatus("Kayıtlı model yüklenemedi, modeli yeniden eğitin. (" + ex.Message + ")", Color.FromArgb(245, 124, 0));
+            }
         }
 
         // ---------- Görüntü kaynağı ----------
@@ -250,7 +268,15 @@ namespace FaceRecognition
                 int count;
                 Cursor = Cursors.WaitCursor;
                 lock (processLock) count = recognizer.Train(dataset);
-                SetStatus($"🧠 Model {recognizer.LabelCount} kişi ve {count} örnekle eğitildi. Tanıma aktif.", Color.FromArgb(46, 125, 50));
+                try
+                {
+                    recognizer.Save(modelPath);
+                    SetStatus($"🧠 Model {recognizer.LabelCount} kişi ve {count} örnekle eğitildi ve kaydedildi. Tanıma aktif.", Color.FromArgb(46, 125, 50));
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is OpenCvSharp.OpenCVException)
+                {
+                    SetStatus($"🧠 Model eğitildi ama diske kaydedilemedi: {ex.Message}", Color.FromArgb(245, 124, 0));
+                }
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is OpenCvSharp.OpenCVException)
             {
@@ -272,6 +298,9 @@ namespace FaceRecognition
                 return;
             dataset.DeleteLabel(label);
             RefreshLabels();
+            if (recognizer.IsTrained)
+                SetStatus($"'{label}' silindi. Mevcut model hâlâ bu kişiyi içeriyor; güncel olması için modeli yeniden eğitin.",
+                    Color.FromArgb(245, 124, 0));
         }
 
         // ---------- Yardımcılar ----------
@@ -282,7 +311,7 @@ namespace FaceRecognition
             foreach (var pair in dataset.GetLabelCounts().OrderBy(p => p.Key))
                 lstLabels.Items.Add($"{pair.Key} ({pair.Value} örnek)");
             lblTrainInfo.Text = recognizer.IsTrained
-                ? $"Model eğitildi: {recognizer.LabelCount} kişi."
+                ? $"Model: {recognizer.LabelCount} kişi, {recognizer.SampleCount} örnek · {recognizer.TrainedAt:dd.MM.yyyy HH:mm} (kayıtlı)"
                 : "Model henüz eğitilmedi (en az 2 kişi gerekir).";
         }
 

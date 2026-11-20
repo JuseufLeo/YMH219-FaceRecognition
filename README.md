@@ -16,6 +16,10 @@ Bu proje **Nesne Tabanlı Programlama (YMH 219)** dersi ek uygulama ödevi kapsa
 |---|---|
 | ![Bilinmeyen kişi](screenshots/03-bilinmeyen-kisi.png) | ![Kamera hatası](screenshots/04-kamera-hatasi.png) |
 
+**Kayıtlı model:** Program yeniden açıldığında, daha önce eğitilen model diskten otomatik yüklenir. **Modeli Eğit**'e basmadan tanıma çalışır; model bilgisi (kişi, örnek sayısı, eğitim zamanı) panelde görünür.
+
+![Kayıtlı modelle tanıma](screenshots/05-kayitli-model.png)
+
 Test görüntüleri modelin eğitiminde **kullanılmamış** fotoğraflardır (her kişinin 9. fotoğrafı ve hiç eğitilmemiş üçüncü bir kişi).
 
 ## Kullanılan Teknolojiler / NuGet Paketleri
@@ -45,10 +49,10 @@ Test görüntüleri modelin eğitiminde **kullanılmamış** fotoğraflardır (h
 2. **Örnek ekleme:**
    - **Tek tek:** "Kişi adı" kutusuna etiketi yazıp **➕ Yüzü Örnek Ekle**'ye basın; görüntüdeki en büyük yüz o kişiye örnek olarak kaydedilir.
    - **Toplu:** **📁 Klasörden Toplu Ekle** ile, her alt klasörü bir kişi olan bir klasör seçin (ör. `Ornekler/Ali/*.jpg`, `Ornekler/Ayse/*.jpg`).
-3. **🧠 Modeli Eğit**'e basın (en az 2 kişi gerekir).
+3. **🧠 Modeli Eğit**'e basın (en az 2 kişi gerekir). Eğitilen model `face_model.yml` (LBPH histogramları) ve `face_model_labels.json` (kişi adları, örnek sayısı, eğitim zamanı) dosyalarına kaydedilir; program bir sonraki açılışta modeli kendiliğinden yükler.
 4. Yeni bir resim seçin veya kameraya bakın: tahmin edilen kişi, güven yüzdesi ve LBPH uzaklık değeri "Tanıma sonucu" bölümünde, etiket de yüzün üstünde görünür.
 
-Örnekler `FaceData/<kişi adı>/` klasörüne 200×200 gri PNG olarak kaydedilir. Bu klasör **.gitignore** ile GitHub'a yüklenmez.
+Örnekler `FaceData/<kişi adı>/` klasörüne 200×200 gri PNG olarak kaydedilir. Bu klasör ve model dosyaları **.gitignore** ile GitHub'a yüklenmez.
 
 ## Kullanılan Örnek Veri
 
@@ -61,6 +65,8 @@ Kişisel gizliliği korumak için tanıma gösteriminde, yüz tanıma araştırm
 - Kamera yoksa / açılamıyorsa: açıklayıcı mesaj, uygulama çalışmaya devam eder
 - Kamera kullanım sırasında koparsa: uyarı verilir
 - Haar Cascade model dosyası bulunamazsa: başlangıçta hata mesajı, algılama devre dışı kalır
+- Kayıtlı model dosyası bozuksa veya okunamıyorsa: uygulama çökmez, "modeli yeniden eğitin" uyarısı gösterilir
+- Bir kişi silindiğinde: mevcut modelin güncel olmadığı ve yeniden eğitilmesi gerektiği bildirilir
 - Seçilen dosya resim değilse, görüntüde yüz yoksa, etiket boşsa veya eğitim için yeterli kişi yoksa: kullanıcıya bilgi verilir
 
 ## Proje Yapısı (Sınıflar)
@@ -70,7 +76,7 @@ Kişisel gizliliği korumak için tanıma gösteriminde, yüz tanıma araştırm
 | `CameraService.cs` | `VideoCapture` ile kameradan arka planda kare okur, kareleri olayla bildirir |
 | `FaceDetector.cs` | Haar Cascade ile yüzleri bulur; yüzü tanıma için 200×200 gri hâle getirir |
 | `FaceDataset.cs` | Yerel yüz örneklerini klasörlerde saklar, eğitim için yükler |
-| `FaceRecognizerService.cs` | LBPH modelini eğitir, tahmin yapar, eşik değerine göre "Bilinmiyor" kararı verir |
+| `FaceRecognizerService.cs` | LBPH modelini eğitir, tahmin yapar, eşik değerine göre "Bilinmiyor" kararı verir; modeli diske kaydeder ve yükler |
 | `MainForm.cs` | Arayüz: görüntü gösterme, işaretleme, örnek ekleme, eğitim, sonuç ve durum bilgisi |
 
 ## Kapsam ve Güvenlik Sınırı
@@ -82,4 +88,3 @@ Bu çalışma yalnızca ders kapsamında, yerel ve gönüllü örneklerle yapıl
 - LBPH küçük veri setleri için uygun, basit bir yöntemdir; ışık, açı ve gözlük gibi değişikliklerde hata yapabilir. "Bilinmiyor" eşiği (`UnknownThreshold = 50`) örnek veriye göre ayarlanmıştır.
 - Güven yüzdesi, LBPH uzaklık değerinden basitçe hesaplanmış yaklaşık bir değerdir (`100 − uzaklık`).
 - OpenCV'nin yazı fonksiyonu Türkçe karakterleri desteklemediği için yüz üstündeki etiketlerde Türkçe karakter kullanılmaması önerilir.
-- Eğitilen model kaydedilmez; uygulama her açıldığında **Modeli Eğit**'e yeniden basılmalıdır (örnekler kalıcıdır).
